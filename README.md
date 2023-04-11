@@ -3,7 +3,7 @@ set ws_android=C:\Users\Administrator\Desktop\NativeWS
 
 # 构建
 
-C://\"Program Files\"/Mendix/9.6.12.46216/modeler/mxbuild.exe --java-home="%JAVA_HOME%" --java-exe-path="%JAVA_HOME%/bin/java.exe" --target=deploy --native-packager --loose-version-check ReactNativeClassDemo.mpr
+C://\"Program Files\"/Mendix/9.6.15.62149/modeler/mxbuild.exe --java-home="%JAVA_HOME%" --java-exe-path="%JAVA_HOME%/bin/java.exe" --target=deploy --native-packager --loose-version-check ReactNativeClassDemo.mpr
 
 # copy bundle
 
