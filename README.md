@@ -25,8 +25,8 @@ npx react-native run-android --variant=DevDebug
 
 # 构建mpk文件
 cd android
-gradlew assembleDebug
+./gradlew assembleDebug
 
 # 查看 apk
 
-start C:\Users\Administrator\Desktop\NativeWS\android\app\build\outputs\apk\appstore\debug
+start %ws_android%\android\app\build\outputs\apk\appstore\debug
