@@ -1,0 +1,54 @@
+name: Mendix App Build
+
+on:
+  push:
+    branches:
+      - main
+env:
+  PRO_VERSION: 9.6.15.62149
+  MPR_FILE: ReactNativeClassDemo.mpr
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+        
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      name: Install Mono and OpenJDK 11
+      with:
+        packages: mono-complete openjdk-11-jdk
+        version: 1.0
+
+    - name: Cache Mendix mxbuild
+      uses: actions/cache@v2
+      with:
+        path: mxbuild-${{ env.PRO_VERSION }}
+        key: mxbuild-${{ env.PRO_VERSION }}
+
+    - name: Download and extract mxbuild
+      run: |
+        if [ ! -d "mxbuild-${{ env.PRO_VERSION }}" ]; then
+          wget https://cdn.mendix.com/runtime/mxbuild-${{ env.PRO_VERSION }}.tar.gz
+          mkdir mxbuild-${{ env.PRO_VERSION }}
+          tar -xzf mxbuild-${{ env.PRO_VERSION }}.tar.gz -C mxbuild-${{ env.PRO_VERSION }}
+        fi
+
+    - name: Show Mendix version
+      run: |
+        mono mxbuild-${{ env.PRO_VERSION }}/modeler/mx.exe show-version ${{ env.MPR_FILE }}
+
+    - name: Build Mendix project For Native
+      run: |
+        mono mxbuild-${{ env.PRO_VERSION }}/modeler/mxbuild.exe --target=deploy --native-packager --loose-version-check --java-home="/usr/lib/jvm/java-11-openjdk-amd64/" --java-exe-path="/usr/lib/jvm/java-11-openjdk-amd64/bin/java" ${{ env.MPR_FILE }}
+
+    - name: "Release MDA Files"
+      uses: marvinpinto/action-automatic-releases@v1.2.1
+      with:
+         repo_token: "${{ secrets.GITHUB_TOKEN }}"
+         automatic_release_tag: "mda"
+         prerelease: false
+         title: "Mendix deploy achieve"
+         files: |
+              deployment/native/bundle
