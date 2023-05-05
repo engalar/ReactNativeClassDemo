@@ -50,9 +50,13 @@ jobs:
       working-directory: native-template
       run: npm i
       
-    - name: Set debug signingConfig to null
+    - name: Generate temporary keystore
+      run: keytool -genkey -v -keystore native-template/android/app/temp-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mykeystorepass -keypass mykeypass -dname "CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"
+      
+    - name: Set debug signingConfig to use temporary keystore
       run: |
-        sed -i '/buildTypes {/a\ \ \ \ debug {\n        signingConfig null\n    }' native-template/android/app/build.gradle
+        echo "signingConfigs { temp { storeFile file('app/temp-release-key.jks') storePassword 'mykeystorepass' keyAlias 'temp' keyPassword 'mykeypass' } }" >> native-template/android/app/build.gradle
+        sed -i '/buildTypes {/a\ \ \ \ debug {\n        signingConfig signingConfigs.temp\n    }' native-template/android/app/build.gradle
       
     - name: Build Android app
       working-directory: native-template/android
