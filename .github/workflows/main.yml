@@ -3,7 +3,7 @@ name: Mendix App Build For Native
 on:
   push:
     branches:
-      - main
+      - master
 env:
   PRO_VERSION: 9.6.15.62149
   MPR_FILE: ReactNativeClassDemo.mpr
