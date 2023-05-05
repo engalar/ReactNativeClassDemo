@@ -6,7 +6,9 @@ on:
       - master
 env:
   PRO_VERSION: 9.18.4.62522
+  TPL_VERSION: v6.3.5
   MPR_FILE: ReactNativeClassDemo.mpr
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,12 +41,25 @@ jobs:
       run: |
         mono mxbuild-${{ env.PRO_VERSION }}/modeler/mxbuild.exe --target=deploy --native-packager --loose-version-check --java-home="/usr/lib/jvm/java-11-openjdk-amd64/" --java-exe-path="/usr/lib/jvm/java-11-openjdk-amd64/bin/java" ${{ env.MPR_FILE }}
 
-    - name: "Release MDA Files"
+    - name: Clone Native Template And Copy Bundle File
+      run: |
+        git clone --depth 1 --branch ${{ env.TPL_VERSION }} https://github.com/mendix/native-template.git
+        cp -R deployment/native/bundle/android/* native-template/android/app/src/main
+        
+    - name: Install dependencies
+      working-directory: native-template
+      run: npm i
+      
+    - name: Build Android app
+      working-directory: native-template/android
+      run: ./gradlew assembleDebug
+          
+    - name: "Release APK Files"
       uses: marvinpinto/action-automatic-releases@v1.2.1
       with:
          repo_token: "${{ secrets.GITHUB_TOKEN }}"
          automatic_release_tag: "mda"
          prerelease: false
-         title: "Mendix deploy achieve"
+         title: "Mendix Android Apk"
          files: |
-              deployment/native/bundle
+              native-template/android/app/build/outputs/apk/debug/app-debug.apk
