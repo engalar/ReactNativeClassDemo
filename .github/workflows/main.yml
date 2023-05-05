@@ -5,7 +5,7 @@ on:
     branches:
       - master
 env:
-  PRO_VERSION: 9.6.15.62149
+  PRO_VERSION: 9.18.4.62522
   MPR_FILE: ReactNativeClassDemo.mpr
 jobs:
   build:
