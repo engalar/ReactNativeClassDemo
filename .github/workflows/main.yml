@@ -50,6 +50,10 @@ jobs:
       working-directory: native-template
       run: npm i
       
+    - name: Set debug signingConfig to null
+      run: |
+        sed -i '/buildTypes {/a\ \ \ \ debug {\n        signingConfig null\n    }' native-template/android/app/build.gradle
+      
     - name: Build Android app
       working-directory: native-template/android
       run: ./gradlew assembleDebug
@@ -62,4 +66,4 @@ jobs:
          prerelease: false
          title: "Mendix Android Apk"
          files: |
-              native-template/android/app/build/outputs/apk/debug/app-debug.apk
+              native-template/android/app/build/outputs/apk/dev/debug/*.apk
