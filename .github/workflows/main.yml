@@ -1,4 +1,4 @@
-name: Mendix App Build
+name: Mendix App Build For Native
 
 on:
   push:
