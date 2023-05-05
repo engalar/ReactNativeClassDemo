@@ -45,15 +45,17 @@ jobs:
       run: |
         git clone --depth 1 --branch ${{ env.TPL_VERSION }} https://github.com/mendix/native-template.git
         cp -R deployment/native/bundle/android/* native-template/android/app/src/main
-        
+    
     - name: Install dependencies
       working-directory: native-template
       run: npm i
       
     - name: Generate temporary keystore
-      run: keytool -genkey -v -keystore native-template/android/app/temp-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mypass -keypass mypass -dname "CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"
+      working-directory: native-template
+      run: keytool -genkey -v -keystore android/app/temp-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mypass -keypass mypass -dname "CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"
       
     - name: Set debug signingConfig to use temporary keystore
+      working-directory: native-template
       run: |
         sed -i "/android {/a\ \   signingConfigs {\n        temp {\n            storeFile file('temp-release-key.jks')\n            storePassword 'mypass'\n            keyAlias 'temp'\n            keyPassword 'mypass'\n        }\n    }" android/app/build.gradle
         sed -i '/buildTypes {/a\ \ \ \ debug {\n        signingConfig signingConfigs.temp\n    }' android/app/build.gradle
