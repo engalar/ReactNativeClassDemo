@@ -35,10 +35,6 @@ jobs:
           tar -xzf mxbuild-${{ env.PRO_VERSION }}.tar.gz -C mxbuild-${{ env.PRO_VERSION }}
         fi
 
-    - name: Show Mendix version
-      run: |
-        mono mxbuild-${{ env.PRO_VERSION }}/modeler/mx.exe show-version ${{ env.MPR_FILE }}
-
     - name: Build Mendix project For Native
       run: |
         mono mxbuild-${{ env.PRO_VERSION }}/modeler/mxbuild.exe --target=deploy --native-packager --loose-version-check --java-home="/usr/lib/jvm/java-11-openjdk-amd64/" --java-exe-path="/usr/lib/jvm/java-11-openjdk-amd64/bin/java" ${{ env.MPR_FILE }}
