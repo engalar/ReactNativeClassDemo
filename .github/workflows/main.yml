@@ -2,8 +2,8 @@ name: Mendix App Build For Native
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*.*.*'
 env:
   PRO_VERSION: 9.18.4.62522
   TPL_VERSION: v6.3.5
@@ -63,13 +63,15 @@ jobs:
     - name: Build Android app
       working-directory: native-template/android
       run: ./gradlew assembleDebug
-          
+
     - name: "Release APK Files"
+      if: startsWith(github.ref, 'refs/tags/v')
       uses: marvinpinto/action-automatic-releases@v1.2.1
       with:
          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-         automatic_release_tag: "mda"
+         automatic_release_tag: "${{ github.ref }}"
          prerelease: false
          title: "Mendix Android Apk"
          files: |
               native-template/android/app/build/outputs/apk/dev/debug/*.apk
+
