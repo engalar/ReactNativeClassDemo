@@ -17,3 +17,5 @@
 /reactnativeclassdemo.mpr.lock
 !/javascriptsource/**/node_modules/
 /nativemobile/builds/
+
+native-template

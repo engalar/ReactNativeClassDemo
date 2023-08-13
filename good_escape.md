@@ -1,0 +1,3 @@
+cmd /C """C:\progra~1\Eclipse Adoptium\jdk-11.0.16.101-hotspot\bin\keytool.exe"" -genkey -v -keystore native-template\android\app\temp-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mypass -keypass mypass -dname ""CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"""
+
+Start-Process -FilePath "C:\progra~1\Eclipse Adoptium\jdk-11.0.16.101-hotspot\bin\keytool.exe" -ArgumentList "-genkey -v -keystore native-template\android\app\temp-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mypass -keypass mypass -dname ""CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"""
