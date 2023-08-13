@@ -2,6 +2,7 @@
 $env:TPL_VERSION = "v6.3.5"
 $env:MPR_FILE = "ReactNativeClassDemo.mpr"
 $env:JDK_PATH = "C:\progra~1\Eclipse Adoptium\jdk-11.0.16.101-hotspot"
+
 # extract pro version
 $query = @"
 .mode column
@@ -66,6 +67,23 @@ Start-Process -FilePath "$keytoolPath" -ArgumentList "$keystoreParams" -Wait -Wo
 $gradleBuildFile = "native-template\android\app\build.gradle"
 (Get-Content -Path $gradleBuildFile) -replace "android {", "android {`n   signingConfigs {`n        temp {`n            storeFile file('temp-release-key.jks')`n            storePassword 'mypass'`n            keyAlias 'temp'`n            keyPassword 'mypass'`n        }`n    }" | Set-Content -Path $gradleBuildFile
 (Get-Content -Path $gradleBuildFile) -replace "buildTypes {", "buildTypes {`n    debug {`n        signingConfig signingConfigs.temp`n    }" | Set-Content -Path $gradleBuildFile
+
+# 设置要替换的内容和替换后的内容
+$oldUrl = "https://maven.fabric.io/public"
+$newUrl = "https://maven.aliyun.com/repository/public"
+
+# 设置要搜索替换的文件路径（这里假设是 build.gradle 文件，您可以根据实际情况修改）
+$filePath = "native-template\android\build.gradle"
+
+# 读取文件内容
+$fileContent = Get-Content -Path $filePath -Raw
+
+# 替换内容
+$newContent = $fileContent -replace [regex]::Escape($oldUrl), $newUrl
+
+# 将新内容写回文件
+$newContent | Set-Content -Path $filePath
+
 
 # Build Android app
 Set-Location -Path "native-template\android"
