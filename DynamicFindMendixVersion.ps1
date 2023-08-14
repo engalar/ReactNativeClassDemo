@@ -1,59 +1,89 @@
-# 给定一个版本号
-$versionNumber = "9.24.4.11007"
+# extract pro version
+$query = @"
+.mode column
+.headers on
+.separator ,
+SELECT "_BuildVersion" FROM "_MetaData";
+"@
+$versionOutput = $versionOutput = $query | .\sqlite3.exe $env:MPR_FILE
+$env:PRO_VERSION = ($versionOutput -split "`n")[2].Trim()
 
-# 从指定 URL 获取 Mendix 版本映射数据
-$url = "https://github.com/mendix/native-template/raw/master/mendix_version.json"
-$response = Invoke-RestMethod -Uri $url
+# Define paths
+$originalLocation = Get-Location
+$localMxHomePath = "C:\progra~1\Mendix\$($env:PRO_VERSION)"
+$localMxbuildPath = "C:\progra~1\Mendix\$($env:PRO_VERSION)\modeler\mxbuild.exe"
+$mxbuildPath = "mxbuild-$env:PRO_VERSION\modeler\mxbuild.exe"
+$keytoolPath = Join-Path -Path $env:JAVA_HOME -ChildPath "bin\keytool.exe"
+$keystorePath = "native-template\android\app\temp-release-key.jks"
 
-# 解析版本映射数据，查找满足给定 Mendix 版本号的 Native Template 最小和最大版本号要求
-$minVersion = $null
-$maxVersion = $null
-
-foreach ($entry in $response.PSObject.Properties) {
-  $versionRequirement = $entry.Name
-  $requirements = $entry.Value
-
-  if ($versionRequirement -eq "*") {
-    $minVersion = "*"
-    $maxVersion = "*"
-    break
-  }
-
-  if ($versionNumber -ge $versionRequirement) {
-    $minVersion = $requirements.min
-    $maxVersion = $requirements.max
-    break
-  }
-}
-
-# 如果找到了满足条件的最小和最大版本号要求
-if ($minVersion -ne $null -and $maxVersion -ne $null) {
-  Write-Host "版本号 $versionNumber 符合要求 $versionRequirement"
-  Write-Host "需要安装的最小版本号为: $minVersion"
-  Write-Host "需要安装的最大版本号为: $maxVersion"
-
-  # 在 GitHub 仓库的 Tags 列表中查找满足约束要求的版本标签
-  $repoOwner = "mendix"
-  $repoName = "native-template"
-  $apiUrl = "https://api.github.com/repos/$repoOwner/$repoName/tags"
-  $tags = Invoke-RestMethod -Uri $apiUrl
-
-  $matchingTags = @()
-  foreach ($tag in $tags) {
-    $tagName = $tag.name
-    if ($tagName -match "^v(\d+\.\d+\.\d+)(-.+)?") {
-      $tagVersion = $matches[1]
-      if (($minVersion -eq "*" -or [version]$tagVersion -ge [version]$minVersion) -and
-                ($maxVersion -eq "*" -or [version]$tagVersion -le [version]$maxVersion)) {
-        $matchingTags += $tagName
-      }
-    }
-  }
-
-  if ($matchingTags.Count -gt 0) {
-    Write-Host "找到满足约束要求的 Tag 版本：$matchingTags"
-  }
-  else {
-    Write-Host "未找到满足约束要求的 Tag 版本。"
+# Function to download file if not exists
+function DownloadFileIfNotExists($url, $filePath) {
+  if (-not (Test-Path -Path $filePath)) {
+    Write-Host "Downloading $url to $filePath"
+    $webClient = New-Object System.Net.WebClient
+    $webClient.DownloadFile($url, $filePath)
   }
 }
+
+# Use local mxbuild if exists, otherwise download
+if (Test-Path -Path $localMxbuildPath) {
+  $mxbuildPath = $localMxbuildPath
+}
+else {
+  Write-Host "Please install Mendix Studio Pro $env:PRO_VERSION first"
+  exit 1
+}
+
+# Build Mendix project For Native
+$javaHome = Join-Path -Path $env:JAVA_HOME -ChildPath "bin\java.exe"
+$mxbuildArgs = "--target=deploy --native-packager --loose-version-check --java-home=`"$env:JAVA_HOME`" --java-exe-path=`"$javaHome`" $env:MPR_FILE"
+
+Invoke-Expression "$mxbuildPath $mxbuildArgs"
+
+# Clone Native Template And Copy Bundle File
+if (Test-Path -Path "native-template") {
+  Write-Host "native-template exists"
+}
+else {
+  Write-Host "native-template not exists"
+  git clone --depth 1 --branch $env:TPL_VERSION https://github.com/mendix/native-template.git
+}
+Copy-Item -Recurse -Force "deployment\native\bundle\android\*" "native-template\android\app\src\main"
+
+# Install dependencies
+Set-Location -Path "native-template"
+npm install --registry=https://registry.npmmirror.com
+Set-Location -Path $originalLocation
+
+# Generate temporary keystore
+$keystoreParams = "-genkey -v -keystore $keystorePath -keyalg RSA -keysize 2048 -validity 10000 -alias temp -storepass mypass -keypass mypass -dname ""CN=Temp, OU=Temp, O=Temp, L=Temp, S=Temp, C=Temp"""
+
+Start-Process -FilePath "$keytoolPath" -ArgumentList "$keystoreParams" -Wait -WorkingDirectory $originalLocation
+
+# Set debug signingConfig to use temporary keystore
+$gradleBuildFile = "native-template\android\app\build.gradle"
+(Get-Content -Path $gradleBuildFile) -replace "android {", "android {`n   signingConfigs {`n        temp {`n            storeFile file('temp-release-key.jks')`n            storePassword 'mypass'`n            keyAlias 'temp'`n            keyPassword 'mypass'`n        }`n    }" | Set-Content -Path $gradleBuildFile
+(Get-Content -Path $gradleBuildFile) -replace "buildTypes {", "buildTypes {`n    debug {`n        signingConfig signingConfigs.temp`n    }" | Set-Content -Path $gradleBuildFile
+
+# 设置要替换的内容和替换后的内容
+$oldUrl = "https://maven.fabric.io/public"
+$newUrl = "https://maven.aliyun.com/repository/public"
+
+# 设置要搜索替换的文件路径（这里假设是 build.gradle 文件，您可以根据实际情况修改）
+$filePath = "native-template\android\build.gradle"
+
+# 读取文件内容
+$fileContent = Get-Content -Path $filePath -Raw
+
+# 替换内容
+$newContent = $fileContent -replace [regex]::Escape($oldUrl), $newUrl
+
+# 将新内容写回文件
+$newContent | Set-Content -Path $filePath
+
+
+# Build Android app
+Set-Location -Path "native-template\android"
+.\gradlew.bat assembleDebug
+
+Set-Location -Path $originalLocation
