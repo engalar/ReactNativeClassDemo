@@ -62,8 +62,11 @@ Start-Process -FilePath "$keytoolPath" -ArgumentList "$keystoreParams" -Wait -Wo
 
 # Set debug signingConfig to use temporary keystore
 $gradleBuildFile = "native-template\android\app\build.gradle"
-(Get-Content -Path $gradleBuildFile) -replace "android {", "android {`n   signingConfigs {`n        temp {`n            storeFile file('temp-release-key.jks')`n            storePassword 'mypass'`n            keyAlias 'temp'`n            keyPassword 'mypass'`n        }`n    }" | Set-Content -Path $gradleBuildFile
-(Get-Content -Path $gradleBuildFile) -replace "buildTypes {", "buildTypes {`n    debug {`n        signingConfig signingConfigs.temp`n    }" | Set-Content -Path $gradleBuildFile
+# if $gradleBuildFile not contain temp-release-key.jks
+if ((Get-Content -Path $gradleBuildFile) -notmatch "temp-release-key.jks") {
+    (Get-Content -Path $gradleBuildFile) -replace "android {", "android {`n   signingConfigs {`n        temp {`n            storeFile file('temp-release-key.jks')`n            storePassword 'mypass'`n            keyAlias 'temp'`n            keyPassword 'mypass'`n        }`n    }" | Set-Content -Path $gradleBuildFile
+    (Get-Content -Path $gradleBuildFile) -replace "buildTypes {", "buildTypes {`n    debug {`n        signingConfig signingConfigs.temp`n    }" | Set-Content -Path $gradleBuildFile
+}
 
 # 设置要替换的内容和替换后的内容
 $oldUrl = "https://maven.fabric.io/public"
